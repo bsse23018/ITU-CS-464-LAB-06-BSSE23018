@@ -1,6 +1,8 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
-// Creates itself when you press Play - no scene setup needed.
+// Starts itself on Play. The LEVEL now comes from the saved scene (LevelSettings),
+// it is no longer built in code at run time.
 public class GameManager : MonoBehaviour
 {
     public static GameManager I;
@@ -10,9 +12,13 @@ public class GameManager : MonoBehaviour
     public int level, lives, coins;
     public float timeLeft;
     public int stateFrame;
-    public float graceUntil;   
+    public float graceUntil;          // no fall-death right after a spawn
+
+    // survive a scene load
+    static int pendingLives = -1;     // -1 = give a fresh StartLives
+    static bool pendingStart;
+
     LevelInfo info;
-    GameObject levelRoot;
     PlayerController player;
     string msg = "", toast = "";
     float toastTimer;
@@ -33,9 +39,27 @@ public class GameManager : MonoBehaviour
     {
         I = this;
         Physics.autoSyncTransforms = true;
+
+        var ls = FindAnyObjectByType<LevelSettings>();
+        if (ls == null)
+        {
+            Debug.LogError("No LevelSettings in this scene. Open a Lab06 level scene (Tools > Lab06 > Bake 5 levels into scenes).");
+            enabled = false;
+            return;
+        }
+        info = ls.ToInfo();
+        level = SceneManager.GetActiveScene().buildIndex;
+
         SetupCamera();
-        CreatePlayer();
-        Load(0, true);
+        CreatePlayer(info.start);
+
+        lives = pendingLives < 0 ? StartLives : pendingLives;
+        pendingLives = -1;
+        coins = 0;
+        timeLeft = info.time;
+        graceUntil = Time.time + 0.75f;
+        SetState(pendingStart ? State.Playing : State.Intro);
+        pendingStart = false;
     }
 
     void SetupCamera()
@@ -55,9 +79,10 @@ public class GameManager : MonoBehaviour
         RenderSettings.ambientLight = new Color(0.55f, 0.55f, 0.6f);
     }
 
-    void CreatePlayer()
+    void CreatePlayer(Vector3 at)
     {
         var pg = new GameObject("Player");
+        pg.transform.position = at;
         var cc = pg.AddComponent<CharacterController>();
         cc.height = 2f; cc.radius = 0.5f; cc.center = Vector3.zero;
 
@@ -78,20 +103,12 @@ public class GameManager : MonoBehaviour
         player = pg.AddComponent<PlayerController>();
     }
 
-    void Load(int i, bool resetLives, bool start = false)
+    // Loading another level = loading another saved scene (its build index = level number).
+    void Go(int levelIndex, bool resetLives, bool start)
     {
-        level = i;
-        if (levelRoot != null) { levelRoot.SetActive(false); Destroy(levelRoot); }
-        levelRoot = new GameObject("Level " + (i + 1));
-        info = LevelBuilder.Build(i, levelRoot.transform);
-        coins = 0;
-        timeLeft = info.time;
-        toastTimer = 0f;
-        if (resetLives) lives = StartLives;
-        player.Teleport(info.start);
-        Physics.SyncTransforms();
-        graceUntil = Time.time + 0.75f;
-        SetState(start ? State.Playing : State.Intro);
+        pendingLives = resetLives ? -1 : lives;
+        pendingStart = start;
+        SceneManager.LoadScene(levelIndex);
     }
 
     void SetState(State s) { state = s; stateFrame = Time.frameCount; }
@@ -103,17 +120,14 @@ public class GameManager : MonoBehaviour
         if (!Playing) return;
 
         // ignore bogus "fell" deaths while the player is actually above the void
-        if (reason.StartsWith("You fell") && player.transform.position.y > -5f)
-        {
-            Debug.Log("Ignored false fall death at " + player.transform.position);
-            return;
-        }
+        if (reason.StartsWith("You fell") && player.transform.position.y > -5f) return;
 
         Debug.Log("DIE: " + reason + " at " + player.transform.position);
         lives--;
         msg = reason;
         SetState(lives <= 0 ? State.GameOver : State.Dead);
     }
+
     public void TryFinish()
     {
         if (!Playing) return;
@@ -129,7 +143,7 @@ public class GameManager : MonoBehaviour
     void Update()
     {
         if (toastTimer > 0f) toastTimer -= Time.deltaTime;
-        if (GameInput.Skip()) { Load((level + 1) % LevelBuilder.Count, true); return; }
+        if (GameInput.Skip()) { Go((level + 1) % LevelBuilder.Count, true, false); return; }
 
         switch (state)
         {
@@ -137,7 +151,7 @@ public class GameManager : MonoBehaviour
                 if (GameInput.Confirm()) SetState(State.Playing);
                 break;
             case State.Playing:
-                if (GameInput.Restart()) { Load(level, false, true); break; }
+                if (GameInput.Restart()) { Go(level, false, true); break; }
                 if (info.time > 0f)
                 {
                     timeLeft -= Time.deltaTime;
@@ -145,18 +159,18 @@ public class GameManager : MonoBehaviour
                 }
                 break;
             case State.Dead:
-                if (GameInput.Confirm()) Load(level, false, true);
+                if (GameInput.Confirm()) Go(level, false, true);
                 break;
             case State.LevelDone:
                 if (GameInput.Confirm())
                 {
-                    if (level + 1 < LevelBuilder.Count) Load(level + 1, true);
+                    if (level + 1 < LevelBuilder.Count) Go(level + 1, true, false);
                     else SetState(State.Won);
                 }
                 break;
             case State.GameOver:
             case State.Won:
-                if (GameInput.Confirm()) Load(0, true);
+                if (GameInput.Confirm()) Go(0, true, false);
                 break;
         }
     }

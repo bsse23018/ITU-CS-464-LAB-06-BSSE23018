@@ -6,20 +6,20 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Scenes/level1_earn_to_die.unity
-    guid: 99c9720ab356a0642a771bea13969a05
+    path: Assets/Scenes/Lab06_Level01.unity
+    guid: a704fd502dd543c4d9b10823811aeaf9
   - enabled: 1
-    path: Assets/Scenes/level2_earn_to_die.unity
-    guid: 49e2a38b110ae414fbac4f0c0e778afd
+    path: Assets/Scenes/Lab06_Level02.unity
+    guid: 50d5d82e4bb79764a948e6f367df1eaa
   - enabled: 1
-    path: Assets/Scenes/level3_earn_to_die.unity
-    guid: 5d81de9cd2917e04d9f275fb41f79090
+    path: Assets/Scenes/Lab06_Level03.unity
+    guid: a3503c6c63df92149b444a8270c2c13b
   - enabled: 1
-    path: Assets/Scenes/level4_earn_to_die.unity
-    guid: cb53c45a0ae7094479af100b45a1a6f2
+    path: Assets/Scenes/Lab06_Level04.unity
+    guid: c08388f7322b3664fbe1112b7c088880
   - enabled: 1
-    path: Assets/Scenes/level5_earn_to_die.unity
-    guid: 5922dc9c0a180da49ac8fddeb79355ce
+    path: Assets/Scenes/Lab06_Level05.unity
+    guid: 9931a6baf09f5bd48b13fcc7f7ea6f82
   m_configObjects:
     com.unity.dt.app-ui: {fileID: 11400000, guid: 1b1c20d82303e4b5781c3ef50ac1449f, type: 2}
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
