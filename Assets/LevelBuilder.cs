@@ -29,7 +29,7 @@ public static class LevelBuilder
         {
             var tmp = GameObject.CreatePrimitive(PrimitiveType.Cube);
             baseMat = tmp.GetComponent<Renderer>().sharedMaterial;
-            Object.Destroy(tmp);
+            Object.DestroyImmediate(tmp);
         }
         switch (index)
         {
@@ -124,7 +124,7 @@ public static class LevelBuilder
         g.name = "Guard";
         g.transform.SetParent(root, false);
         g.transform.position = pts[0] + Vector3.up;
-        Object.Destroy(g.GetComponent<Collider>());
+        Object.DestroyImmediate(g.GetComponent<Collider>());
         var m = new Material(baseMat);
         m.color = new Color(0.15f, 0.15f, 0.6f);
         g.GetComponent<Renderer>().sharedMaterial = m;
